@@ -167,7 +167,7 @@ batch.on 'job:success', (job) ->
 batch.on 'job:complete', (job)->
   console.log('A job has finished somehow.')
 
-# you can retrieve the last error caused by the worker using the job#getResponse method
+# you can retrieve the last error caused by the worker using the job#getLastError method
 batch.on 'job:error', (job) ->
   console.error('A job threw an error:', job.getLastError())
 
