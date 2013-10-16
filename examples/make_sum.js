@@ -1,4 +1,4 @@
-importScripts('../orange/worker.js');
+importScripts('../dist/orange/worker.js');
 
 perform(function(data) {
 
