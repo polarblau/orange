@@ -134,10 +134,10 @@ perform (data)->
 ### Batches
 
 You’ll find yourself sometimes in a situation where you’d like to schedule a group of jobs and receive a callback once *all* jobs are completed.
-Orange provides the convenience class `SortedBatch` for this purpose:
+Orange provides the convenience class `Batch` for this purpose:
 
 ```coffee
-batch = new Orange.SortedBatch
+batch = new Orange.Batch
 
 # now you can simply push a job into this set after you define it
 
@@ -148,7 +148,7 @@ batch.perform()
 
 # additionally you can also import an set of jobs when creating a new batch
 
-batch = new Orange.SortedBatch [job1, job2, job3]
+batch = new Orange.Batch [job1, job2, job3]
 ```
 
 *NOTE: Once a job has been added to batch you can’t call it’s `#perform` method any longer. Call the `batch#perform` method instead once the batch has been populated.*
