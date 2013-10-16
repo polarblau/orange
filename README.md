@@ -91,7 +91,7 @@ Orange provides a thing API layer for the workers to simplify the communication 
 importScripts 'orange/worker.js'
 
 perform (data)->
-	data.numbers.reduce (a, b) -> a + b
+  data.numbers.reduce (a, b) -> a + b
 ```
 
 **Note**: The Orange worker API only extends the native Web Worker API but doesn’t override anything.
@@ -105,7 +105,7 @@ job.on 'success', (result) ->
   
 # complete: triggered either once the Worker’s `perform()` method returns successfully or the max. number of retries has been exceeded
 job.on 'complete', ->
-	console.log('Your job finished')
+  console.log('Your job finished')
 
 # error: triggered whenever an error occurs within the worker
 job.on 'error', (error) -> 
@@ -125,7 +125,7 @@ The Orange Worker API provides a convenience method `log()` to log messages from
 importScripts 'orange/worker.js'
 
 perform (data)->
-	log 'starting to count...'
+  log 'starting to count...'
   data.numbers.reduce (a, b) -> a + b
 ```
 
@@ -165,7 +165,7 @@ batch.on 'job:success', (job) ->
   console.log('A job has completed and returned:', job.getResponse())
 
 batch.on 'job:complete', (job)->
-	console.log('A job has finished somehow.')
+  console.log('A job has finished somehow.')
 
 # you can retrieve the last error caused by the worker using the job#getResponse method
 batch.on 'job:error', (job) ->
