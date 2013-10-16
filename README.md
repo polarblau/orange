@@ -140,16 +140,16 @@ Orange provides the convenience class `Batch` for this purpose:
 batch = new Orange.Batch
 
 # now you can simply push a job into this set after you define it
-
 job = new Orange.Job('sum', [1, 2, 3])
 batch.push job
 
 batch.perform()
 
 # additionally you can also import an set of jobs when creating a new batch
-
 batch = new Orange.Batch [job1, job2, job3]
 ```
+
+A convenient side effect of a batch is, that the jobs will remain sorted.
 
 *NOTE: Once a job has been added to batch you can’t call it’s `#perform` method any longer. Call the `batch#perform` method instead once the batch has been populated.*
 *NOTE: Once a batches’ `#perform` method has been called it will be locked and no more new jobs can be added to it.*
