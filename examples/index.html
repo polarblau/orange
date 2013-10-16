@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <script src="../dist/orange.js"></script>
+    <script>
+      Orange.Config.set({
+        'workersPath': '.',
+        'maxRetries' : 2
+      });
+
+      var job1 = new Orange.Job('makeSum', {members: [1, 2, 3], name: 'job1'}),
+          job2 = new Orange.Job('makeSum', {members: [2, 3, 4], name: 'job2'});
+
+      var batch = new Orange.Batch([job1]);
+      batch.push(job2);
+      /*
+      job1.on('complete', function() {
+        console.log('JOB 1: Done, somehow.');
+      });
+
+      job1.on('success', function(result) {
+        console.log('JOB 1: Calculated sum:', result);
+      });
+
+      job1.on('error', function(error) {
+        console.error('JOB 1: Threw error:', error);
+      });
+
+      job1.on('failure', function(error) {
+        console.log('JOB 1: Failed entirely:', error);
+      });
+
+      job2.on('complete', function() {
+        console.log('JOB 2: Done, somehow.');
+      });
+
+      job2.on('success', function(result) {
+        console.log('JOB 2: Calculated sum:', result);
+      });
+
+      job2.on('error', function(error) {
+        console.error('JOB 2: Threw error:', error);
+      });
+
+      job2.on('failure', function(error) {
+        console.log('JOB 2: Failed entirely:', error);
+      });
+      */
+
+      batch.on('job:complete', function(job) {
+        console.log("job finished", job.getData().name);
+      });
+
+      batch.on('job:success', function(job) {
+        console.log("job succeeded", job.getData().name, job.getResponse());
+      });
+
+      batch.on('job:error', function(job) {
+        console.log("job threw error", job.getData().name, job.getLastError());
+      });
+
+      batch.on('job:failure', function(job) {
+        console.log("job failed", job.getData().name, job.getLastError());
+      });
+
+      batch.on('complete', function(jobs) {
+        console.log("batch done",
+          JSON.stringify(
+            jobs.map(function(job) {
+              return job.getData().name;
+            })
+          )
+        );
+      });
+
+      batch.perform();
+
+      /*
+      job1.perform();
+      job2.perform();
+      */
+    </script>
+  </body>
+</html>

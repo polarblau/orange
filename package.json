@@ -1,0 +1,41 @@
+{
+  "author": "Florian Plank",
+  "name": "orange",
+  "description": "Simpler background processing on the client side.",
+  "version": "0.2.0",
+  "homepage": "http://github.com/polarblau/orange",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/polarblau/orange.git"
+  },
+  "bugs": {
+    "url" : "http://github.com/polarblau/orange/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/polarblau/orange/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {},
+  "preferGlobal": true,
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-jshint": "~0.6.3",
+    "grunt-contrib-nodeunit": "~0.2.0",
+    "grunt-contrib-uglify": "~0.2.2",
+    "grunt-contrib-coffee": "*",
+    "grunt-contrib-concat": "*",
+    "grunt-contrib-watch": "*",
+    "grunt-mocha-phantomjs": "*",
+    "grunt-mocha": "*",
+    "mocha-phantomjs": "*",
+    "phantomjs": "~1.9.2",
+    "mocha": "*",
+    "chai": "*",
+    "sinon": "*",
+    "sinon-chai": "*",
+    "grunt-strip-code": "*"
+  }
+}
+

@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "sum.js",
+  "sourceRoot": "",
+  "sources": [
+    "sum.coffee"
+  ],
+  "names": [],
+  "mappings": "AAAA;CAAA,CAAA,WAAA,cAAA;;CAAA,CAEA,CAAQ,CAAA,GAAR,EAAS;CACP,OAAA,oBAAA;CAAA,EAAO,CAAP;CACA;CAAA,QAAA,kCAAA;yBAAA;CAAA,GAAA,EAAA;CAAA,IADA;CADM,UAGN;CAHF,EAAQ;CAFR"
+}
