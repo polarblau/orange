@@ -85,7 +85,7 @@ job.perform()
 
 #### Defining a worker using the Orange Worker API
 
-Orange provides a thing API layer for the workers to simplify the communication with the job. To define a new worker, create a new Javascript file under your workers directory and import Orange’s Worker API using the native function `importScripts()`. Then define your Worker through the `defineWorker()` method provided through the Orange API.
+Orange provides a thing API layer for the workers to simplify the communication with the job. To define a new worker, create a new Javascript file under your workers directory and import Orange’s Worker API using the native function `importScripts()`. It will provide you with a `perform()` function which will be called every time a job is run.
 
 ```coffee
 importScripts 'orange/worker.js'
