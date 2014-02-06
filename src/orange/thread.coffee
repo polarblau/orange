@@ -40,10 +40,10 @@ class Orange.Thread extends Orange.Eventable
     @trigger 'done'
     error.preventDefault()
 
+  # TODO: get rid of success/error and handle distinction in job?
   responders:
     error  : (error)   -> @job.handleError(error)
     success: (response)-> @job.handleSuccess(response)
-    stream : (response)-> @job.handleStream(response)
     log    : (message) -> Orange.Utils.log(message)
 
 
