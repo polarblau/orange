@@ -10,6 +10,9 @@ class Orange.Thread extends Orange.Eventable
     type       = @job.getType()
     path       = Orange.Utils.webWorkerPathFor(type)
 
+    # manual job termination
+    @job.on 'terminate', @kill if @job.isKeepAlive()
+
     @webWorker = new Orange.Worker(path)
     @webWorker.onmessage = @onMessage
     @webWorker.onerror   = @onError
@@ -18,7 +21,7 @@ class Orange.Thread extends Orange.Eventable
   perform: ->
     @webWorker.postMessage type: 'perform', data: @job.getData()
 
-  kill: ->
+  kill: =>
     @webWorker.terminate()
     @webWorker = null
 
@@ -27,9 +30,10 @@ class Orange.Thread extends Orange.Eventable
 
     if @responders[type]?
       @responders[type].call(@, response)
-      @trigger 'done'
+      @trigger 'done' unless @job.isKeepAlive()
     else
-      throw new ResponderNotFoundError(type)
+      @job.handleEvent(type, response)
+      #throw new ResponderNotFoundError(type)
 
   onError: (error)=>
     @responders.error.call(@, error)
@@ -39,6 +43,7 @@ class Orange.Thread extends Orange.Eventable
   responders:
     error  : (error)   -> @job.handleError(error)
     success: (response)-> @job.handleSuccess(response)
+    stream : (response)-> @job.handleStream(response)
     log    : (message) -> Orange.Utils.log(message)
 
 

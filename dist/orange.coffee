@@ -1,7 +1,7 @@
 ###
-orange - v0.2.0 - 2013-10-17
+orange - v0.2.0 - 2014-02-07
 http://github.com/polarblau/orange
-Copyright (c) 2013 Florian Plank
+Copyright (c) 2014 Florian Plank
 Licensed MIT
 #### https://gist.github.com/paulirish/1579671#comment-91515
 do ->
@@ -154,7 +154,7 @@ class JobStateTransitionError extends Error
 
 class Orange.Job extends Orange.Eventable
 
-  constructor: (@_type, @_data)->
+  constructor: (@_type, @_data, @_keepAlive = false)->
     @_retryCount = 0
     @_isLocked   = false
     @_response   = null
@@ -168,6 +168,9 @@ class Orange.Job extends Orange.Eventable
       @lock()
       Orange.Queue.push(@)
     @ # don't want to return the queue
+
+  terminate: =>
+    @trigger 'terminate' if @isKeepAlive()
 
   handleError: (error)=>
     @_lastError = error
@@ -184,11 +187,17 @@ class Orange.Job extends Orange.Eventable
     @trigger 'complete'
     @trigger 'success', response
 
+  handleEvent: (type, response) ->
+    @trigger type, response
+
   lock: ->
     @_isLocked = true
 
   isLocked: ->
     @_isLocked
+
+  isKeepAlive: ->
+    @_keepAlive
 
   getType: ->
     @_type
@@ -264,6 +273,9 @@ class Orange.Thread extends Orange.Eventable
     type       = @job.getType()
     path       = Orange.Utils.webWorkerPathFor(type)
 
+    # manual job termination
+    @job.on 'terminate', @kill if @job.isKeepAlive()
+
     @webWorker = new Orange.Worker(path)
     @webWorker.onmessage = @onMessage
     @webWorker.onerror   = @onError
@@ -272,7 +284,7 @@ class Orange.Thread extends Orange.Eventable
   perform: ->
     @webWorker.postMessage type: 'perform', data: @job.getData()
 
-  kill: ->
+  kill: =>
     @webWorker.terminate()
     @webWorker = null
 
@@ -281,9 +293,10 @@ class Orange.Thread extends Orange.Eventable
 
     if @responders[type]?
       @responders[type].call(@, response)
-      @trigger 'done'
+      @trigger 'done' unless @job.isKeepAlive()
     else
-      throw new ResponderNotFoundError(type)
+      @job.handleEvent(type, response)
+      #throw new ResponderNotFoundError(type)
 
   onError: (error)=>
     @responders.error.call(@, error)
@@ -293,6 +306,7 @@ class Orange.Thread extends Orange.Eventable
   responders:
     error  : (error)   -> @job.handleError(error)
     success: (response)-> @job.handleSuccess(response)
+    stream : (response)-> @job.handleStream(response)
     log    : (message) -> Orange.Utils.log(message)
 
 

@@ -34,6 +34,10 @@
     };
   };
 
+  this.trigger = function(event, data) {
+    return respond(event, data);
+  };
+
   this.log = function(message) {
     return respond("log", message);
   };

@@ -17,6 +17,9 @@ class MethodNotFoundError extends Error
     else
       throw new MethodNotFoundError(type)
 
+@trigger = (event, data)->
+  respond(event, data)
+
 @log = (message)->
   respond("log", message)
 

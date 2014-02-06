@@ -1,7 +1,7 @@
 /*
-orange - v0.2.0 - 2013-10-17
+orange - v0.2.0 - 2014-02-07
 http://github.com/polarblau/orange
-Copyright (c) 2013 Florian Plank
+Copyright (c) 2014 Florian Plank
 Licensed MIT
 */
 
@@ -233,11 +233,13 @@ Licensed MIT
   Orange.Job = (function(_super) {
     __extends(Job, _super);
 
-    function Job(_type, _data) {
+    function Job(_type, _data, _keepAlive) {
       this._type = _type;
       this._data = _data;
+      this._keepAlive = _keepAlive != null ? _keepAlive : false;
       this.handleSuccess = __bind(this.handleSuccess, this);
       this.handleError = __bind(this.handleError, this);
+      this.terminate = __bind(this.terminate, this);
       this.perform = __bind(this.perform, this);
       this._retryCount = 0;
       this._isLocked = false;
@@ -259,6 +261,12 @@ Licensed MIT
       return this;
     };
 
+    Job.prototype.terminate = function() {
+      if (this.isKeepAlive()) {
+        return this.trigger('terminate');
+      }
+    };
+
     Job.prototype.handleError = function(error) {
       this._lastError = error;
       if (this._retryCount < Orange.Config.get('maxRetries')) {
@@ -277,12 +285,20 @@ Licensed MIT
       return this.trigger('success', response);
     };
 
+    Job.prototype.handleEvent = function(type, response) {
+      return this.trigger(type, response);
+    };
+
     Job.prototype.lock = function() {
       return this._isLocked = true;
     };
 
     Job.prototype.isLocked = function() {
       return this._isLocked;
+    };
+
+    Job.prototype.isKeepAlive = function() {
+      return this._keepAlive;
     };
 
     Job.prototype.getType = function() {
@@ -429,8 +445,12 @@ Licensed MIT
       this.job = job;
       this.onError = __bind(this.onError, this);
       this.onMessage = __bind(this.onMessage, this);
+      this.kill = __bind(this.kill, this);
       type = this.job.getType();
       path = Orange.Utils.webWorkerPathFor(type);
+      if (this.job.isKeepAlive()) {
+        this.job.on('terminate', this.kill);
+      }
       this.webWorker = new Orange.Worker(path);
       this.webWorker.onmessage = this.onMessage;
       this.webWorker.onerror = this.onError;
@@ -454,9 +474,11 @@ Licensed MIT
       _ref = message.data, type = _ref.type, response = _ref.response;
       if (this.responders[type] != null) {
         this.responders[type].call(this, response);
-        return this.trigger('done');
+        if (!this.job.isKeepAlive()) {
+          return this.trigger('done');
+        }
       } else {
-        throw new ResponderNotFoundError(type);
+        return this.job.handleEvent(type, response);
       }
     };
 
@@ -472,6 +494,9 @@ Licensed MIT
       },
       success: function(response) {
         return this.job.handleSuccess(response);
+      },
+      stream: function(response) {
+        return this.job.handleStream(response);
       },
       log: function(message) {
         return Orange.Utils.log(message);

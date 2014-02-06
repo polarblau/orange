@@ -5,7 +5,7 @@ class JobStateTransitionError extends Error
 
 class Orange.Job extends Orange.Eventable
 
-  constructor: (@_type, @_data)->
+  constructor: (@_type, @_data, @_keepAlive = false)->
     @_retryCount = 0
     @_isLocked   = false
     @_response   = null
@@ -19,6 +19,9 @@ class Orange.Job extends Orange.Eventable
       @lock()
       Orange.Queue.push(@)
     @ # don't want to return the queue
+
+  terminate: =>
+    @trigger 'terminate' if @isKeepAlive()
 
   handleError: (error)=>
     @_lastError = error
@@ -35,11 +38,17 @@ class Orange.Job extends Orange.Eventable
     @trigger 'complete'
     @trigger 'success', response
 
+  handleEvent: (type, response) ->
+    @trigger type, response
+
   lock: ->
     @_isLocked = true
 
   isLocked: ->
     @_isLocked
+
+  isKeepAlive: ->
+    @_keepAlive
 
   getType: ->
     @_type
