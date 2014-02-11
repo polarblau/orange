@@ -1,5 +1,5 @@
 /*
-orange - v0.2.0 - 2014-02-07
+orange - v0.2.0 - 2014-02-11
 http://github.com/polarblau/orange
 Copyright (c) 2014 Florian Plank
 Licensed MIT
@@ -7,7 +7,7 @@ Licensed MIT
 
 
 (function() {
-  var BatchStateTransitionError, JobStateTransitionError, ResponderNotFoundError, SchedulerSingleton,
+  var BatchStateTransitionError, JobStateTransitionError, SchedulerSingleton,
     __slice = [].slice,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
@@ -237,6 +237,7 @@ Licensed MIT
       this._type = _type;
       this._data = _data;
       this._keepAlive = _keepAlive != null ? _keepAlive : false;
+      this.handleEvent = __bind(this.handleEvent, this);
       this.handleSuccess = __bind(this.handleSuccess, this);
       this.handleError = __bind(this.handleError, this);
       this.terminate = __bind(this.terminate, this);
@@ -286,7 +287,23 @@ Licensed MIT
     };
 
     Job.prototype.handleEvent = function(type, response) {
-      return this.trigger(type, response);
+      switch (type) {
+        case 'success':
+          return this.handleSuccess(response);
+        case 'error':
+          return this.handleError(response);
+        case 'log':
+          return Orange.Utils.log(response);
+        default:
+          return this.trigger(type, response);
+      }
+    };
+
+    Job.prototype.send = function(type, data) {
+      return this.trigger('send', {
+        type: type,
+        data: data
+      });
     };
 
     Job.prototype.lock = function() {
@@ -424,19 +441,6 @@ Licensed MIT
 
   })(Orange.Eventable);
 
-  ResponderNotFoundError = (function(_super) {
-    __extends(ResponderNotFoundError, _super);
-
-    ResponderNotFoundError.prototype.name = 'MethodNotFoundError';
-
-    function ResponderNotFoundError(type) {
-      this.message = "Orange.Worker does't respond to method #" + type;
-    }
-
-    return ResponderNotFoundError;
-
-  })(Error);
-
   Orange.Thread = (function(_super) {
     __extends(Thread, _super);
 
@@ -458,10 +462,19 @@ Licensed MIT
     }
 
     Thread.prototype.perform = function() {
-      return this.webWorker.postMessage({
+      var ww,
+        _this = this;
+      this.webWorker.postMessage({
         type: 'perform',
         data: this.job.getData()
       });
+      if (this.job.isKeepAlive()) {
+        ww = this.webWorker;
+        return this.job.on('send', function(data) {
+          var type, _ref;
+          return ww.postMessage((_ref = data, type = _ref.type, data = _ref.data, _ref));
+        });
+      }
     };
 
     Thread.prototype.kill = function() {
@@ -472,35 +485,16 @@ Licensed MIT
     Thread.prototype.onMessage = function(message) {
       var response, type, _ref;
       _ref = message.data, type = _ref.type, response = _ref.response;
-      if (this.responders[type] != null) {
-        this.responders[type].call(this, response);
-        if (!this.job.isKeepAlive()) {
-          return this.trigger('done');
-        }
-      } else {
-        return this.job.handleEvent(type, response);
+      this.job.handleEvent(type, response);
+      if (!this.job.isKeepAlive()) {
+        return this.trigger('done');
       }
     };
 
     Thread.prototype.onError = function(error) {
-      this.responders.error.call(this, error);
+      this.job.handleEvent('error', error);
       this.trigger('done');
       return error.preventDefault();
-    };
-
-    Thread.prototype.responders = {
-      error: function(error) {
-        return this.job.handleError(error);
-      },
-      success: function(response) {
-        return this.job.handleSuccess(response);
-      },
-      stream: function(response) {
-        return this.job.handleStream(response);
-      },
-      log: function(message) {
-        return Orange.Utils.log(message);
-      }
     };
 
     /* test-only-> */;

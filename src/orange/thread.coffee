@@ -1,8 +1,3 @@
-class ResponderNotFoundError extends Error
-  name: 'MethodNotFoundError'
-  constructor: (type) ->
-    @message = "Orange.Worker does't respond to method ##{type}"
-
 # Handles messaging between native web worker and job
 class Orange.Thread extends Orange.Eventable
 
@@ -20,6 +15,10 @@ class Orange.Thread extends Orange.Eventable
 
   perform: ->
     @webWorker.postMessage type: 'perform', data: @job.getData()
+    if @job.isKeepAlive()
+      ww = @webWorker
+      @job.on 'send', (data)=>
+        ww.postMessage {type, data} = data
 
   kill: =>
     @webWorker.terminate()
@@ -28,23 +27,13 @@ class Orange.Thread extends Orange.Eventable
   onMessage: (message)=>
     {type, response} = message.data
 
-    if @responders[type]?
-      @responders[type].call(@, response)
-      @trigger 'done' unless @job.isKeepAlive()
-    else
-      @job.handleEvent(type, response)
-      #throw new ResponderNotFoundError(type)
+    @job.handleEvent(type, response)
+    @trigger 'done' unless @job.isKeepAlive()
 
   onError: (error)=>
-    @responders.error.call(@, error)
+    @job.handleEvent('error', error)
     @trigger 'done'
     error.preventDefault()
-
-  # TODO: get rid of success/error and handle distinction in job?
-  responders:
-    error  : (error)   -> @job.handleError(error)
-    success: (response)-> @job.handleSuccess(response)
-    log    : (message) -> Orange.Utils.log(message)
 
 
   `/* test-only-> */`

@@ -10,12 +10,27 @@
         'maxRetries' : 2
       });
 
+      /*
       var job1 = new Orange.Job('makeSum', {members: [1, 2, 3], name: 'job1'}),
-          job2 = new Orange.Job('makeSum', {members: [2, 3, 4], name: 'job2'});
+          job2 = new Orange.Job('makeSum', {members: [2, 3, 4], name: 'job2'}),
+      */
+      var job3 = new Orange.Job('longRunning', {}, true);
 
+      job3.on('success', function(result) { console.log(result); });
+      job3.on('time', function(time) { console.log("Time", time); });
+
+      job3.on('error', function(error) { throw error; });
+      job3.perform();
+
+      setTimeout(function() {
+        console.log("calculating ...")
+        job3.send('calculate', '3 + 4');
+      }, 5000);
+
+      /*
       var batch = new Orange.Batch([job1]);
       batch.push(job2);
-      /*
+
       job1.on('complete', function() {
         console.log('JOB 1: Done, somehow.');
       });
@@ -47,7 +62,7 @@
       job2.on('failure', function(error) {
         console.log('JOB 2: Failed entirely:', error);
       });
-      */
+
 
       batch.on('job:complete', function(job) {
         console.log("job finished", job.getData().name);
@@ -77,7 +92,6 @@
 
       batch.perform();
 
-      /*
       job1.perform();
       job2.perform();
       */

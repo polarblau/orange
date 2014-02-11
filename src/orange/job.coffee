@@ -38,8 +38,17 @@ class Orange.Job extends Orange.Eventable
     @trigger 'complete'
     @trigger 'success', response
 
-  handleEvent: (type, response) ->
-    @trigger type, response
+  handleEvent: (type, response) =>
+    switch type
+      when 'success' then @handleSuccess(response)
+      when 'error'   then @handleError(response)
+      when 'log'     then Orange.Utils.log(response)
+      else @trigger type, response
+
+  # TODO: use #trigger here as well, events should
+  # always reflect across threads
+  send: (type, data)->
+    @trigger 'send', {type, data}
 
   lock: ->
     @_isLocked = true

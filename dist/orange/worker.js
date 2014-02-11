@@ -1,52 +1,74 @@
 (function() {
-  var MethodNotFoundError, respond,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var Job;
 
-  MethodNotFoundError = (function(_super) {
-    __extends(MethodNotFoundError, _super);
+  Job = (function() {
+    var respond;
 
-    MethodNotFoundError.prototype.name = 'MethodNotFoundError';
+    respond = function(type, response) {
+      return self.postMessage({
+        type: type,
+        response: response
+      });
+    };
 
-    function MethodNotFoundError(method) {
-      this.message = "Worker does't implement method #" + method;
+    function Job(context) {
+      this.context = context;
+      this._subscriptions = {};
+      this._done = false;
     }
 
-    return MethodNotFoundError;
+    Job.prototype.on = function(event, callback) {
+      if (this._subscriptions[event] == null) {
+        this._subscriptions[event] = [];
+      }
+      return this._subscriptions[event].push(callback);
+    };
 
-  })(Error);
+    Job.prototype.done = function(data) {
+      respond('success', data);
+      return this._done = true;
+    };
+
+    Job.prototype.isDone = function() {
+      return this._done;
+    };
+
+    Job.prototype.error = function(error) {
+      return respond('error', error);
+    };
+
+    Job.prototype.trigger = function(event, data) {
+      return respond(event, data);
+    };
+
+    Job.prototype.log = function(message) {
+      return respond("log", message);
+    };
+
+    return Job;
+
+  })();
 
   this.perform = function(handler) {
-    var wrappedPerform;
-    wrappedPerform = function(data) {
-      var response;
-      response = handler(data);
-      return respond('success', response);
-    };
+    var job;
+    job = new Job;
     return self.onmessage = function(e) {
-      var data, type, _ref;
+      var callback, data, result, subcriptions, type, _i, _len, _ref, _results;
       _ref = e.data, type = _ref.type, data = _ref.data;
       if (type === 'perform') {
-        return wrappedPerform(data);
-      } else {
-        throw new MethodNotFoundError(type);
+        if ((result = handler(job, data)) && !job.isDone()) {
+          return job.done(result);
+        }
+      } else if (job._subscriptions[type] != null) {
+        subcriptions = job._subscriptions[type];
+        _results = [];
+        for (_i = 0, _len = subcriptions.length; _i < _len; _i++) {
+          callback = subcriptions[_i];
+          _results.push(callback(data));
+        }
+        return _results;
       }
     };
-  };
-
-  this.trigger = function(event, data) {
-    return respond(event, data);
-  };
-
-  this.log = function(message) {
-    return respond("log", message);
-  };
-
-  respond = function(type, response) {
-    return self.postMessage({
-      type: type,
-      response: response
-    });
   };
 
 }).call(this);

@@ -1,5 +1,5 @@
 ###
-orange - v0.2.0 - 2014-02-07
+orange - v0.2.0 - 2014-02-11
 http://github.com/polarblau/orange
 Copyright (c) 2014 Florian Plank
 Licensed MIT
@@ -187,8 +187,17 @@ class Orange.Job extends Orange.Eventable
     @trigger 'complete'
     @trigger 'success', response
 
-  handleEvent: (type, response) ->
-    @trigger type, response
+  handleEvent: (type, response) =>
+    switch type
+      when 'success' then @handleSuccess(response)
+      when 'error'   then @handleError(response)
+      when 'log'     then Orange.Utils.log(response)
+      else @trigger type, response
+
+  # TODO: use #trigger here as well, events should
+  # always reflect across threads
+  send: (type, data)->
+    @trigger 'send', {type, data}
 
   lock: ->
     @_isLocked = true
@@ -261,11 +270,6 @@ class Orange.Batch extends Orange.Eventable
   _onJobCompleted: =>
     if ++@_completedJobsCount >= @jobs.length
       @trigger 'complete', @jobs
-class ResponderNotFoundError extends Error
-  name: 'MethodNotFoundError'
-  constructor: (type) ->
-    @message = "Orange.Worker does't respond to method ##{type}"
-
 # Handles messaging between native web worker and job
 class Orange.Thread extends Orange.Eventable
 
@@ -283,6 +287,10 @@ class Orange.Thread extends Orange.Eventable
 
   perform: ->
     @webWorker.postMessage type: 'perform', data: @job.getData()
+    if @job.isKeepAlive()
+      ww = @webWorker
+      @job.on 'send', (data)=>
+        ww.postMessage {type, data} = data
 
   kill: =>
     @webWorker.terminate()
@@ -291,23 +299,13 @@ class Orange.Thread extends Orange.Eventable
   onMessage: (message)=>
     {type, response} = message.data
 
-    if @responders[type]?
-      @responders[type].call(@, response)
-      @trigger 'done' unless @job.isKeepAlive()
-    else
-      @job.handleEvent(type, response)
-      #throw new ResponderNotFoundError(type)
+    @job.handleEvent(type, response)
+    @trigger 'done' unless @job.isKeepAlive()
 
   onError: (error)=>
-    @responders.error.call(@, error)
+    @job.handleEvent('error', error)
     @trigger 'done'
     error.preventDefault()
-
-  responders:
-    error  : (error)   -> @job.handleError(error)
-    success: (response)-> @job.handleSuccess(response)
-    stream : (response)-> @job.handleStream(response)
-    log    : (message) -> Orange.Utils.log(message)
 
 
   `/* test-only-> */`
