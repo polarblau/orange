@@ -1,7 +1,7 @@
 class Job
 
   respond = (type, response)->
-    self.postMessage type: type, response: response
+    self.postMessage {type, response}
 
   constructor: (@context)->
     @_subscriptions = {}
