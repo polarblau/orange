@@ -3,7 +3,7 @@ class Job
   respond = (type, response)->
     self.postMessage {type, response}
 
-  constructor: (@context)->
+  constructor: ->
     @_subscriptions = {}
     @_done          = false
 
